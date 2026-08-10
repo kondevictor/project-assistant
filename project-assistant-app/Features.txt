@@ -1,0 +1,28 @@
+Features
+
+Some things to consider
+- keep the phases global
+- milestones should be embedded in phases
+
+Projects
+- create, update, delete a project
+- create projects (type of project, name, stakeholders involved, brief description, deadline, etc)
+- update project (add partner (individual, company, investor, project dev, legal, other), update position)
+- show kanboard
+- recommend next course of action per project
+- run background verification/due diligence on stakeholders
+
+Document Generation
+- create, update, delete
+- create (type of document (MOU, NCNDA, Mandate, Commission, Hybrid, Proposal, Plan, Teaser, etc, other), stakeholders, custom documents) - must call and AI Agent to generate a document
+
+Tasks
+- embedded in projects
+- can be turned to milestones
+- must have deadlines
+
+Meetings
+- record meetings (unlimited record time)
+- transcribe meetings and develop a project summary
+- add meeting to project/milestone within project
+- schedule meeting with redirect to meeting app

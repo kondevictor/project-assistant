@@ -1,0 +1,143 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client"
+  output   = "../src/generated/prisma"
+}
+
+datasource db {
+  provider = "sqlite"
+}
+
+// NOTE: SQLite has no native enum type, so status/priority/stage fields below
+// are plain Strings constrained to a fixed set of values in application code
+// (see src/lib/constants.ts). This keeps the schema portable to Postgres,
+// where we can promote them to real enums later without changing app logic.
+
+model Project {
+  id          String    @id @default(cuid())
+  name        String
+  description String?
+  // ProjectStage: "INCEPTION" | "PLANNING" | "EXECUTION" | "REVIEW" | "COMPLETED" | "ON_HOLD"
+  stage       String    @default("INCEPTION")
+  startDate   DateTime?
+  targetDate  DateTime?
+  completedAt DateTime?
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+
+  phases Phase[]
+  tasks  Task[]
+  notes  Note[]
+}
+
+model Phase {
+  id          String    @id @default(cuid())
+  project     Project   @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  projectId   String
+  name        String
+  isMilestone Boolean   @default(false)
+  dueDate     DateTime?
+  completedAt DateTime?
+  order       Int       @default(0)
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+
+  tasks Task[]
+
+  @@index([projectId])
+}
+
+model Task {
+  id        String  @id @default(cuid())
+  project   Project @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  projectId String
+  phase     Phase?  @relation(fields: [phaseId], references: [id])
+  phaseId   String?
+
+  title       String
+  description String?
+  owner       String?
+
+  // TaskStatus: "NOT_STARTED" | "IN_PROGRESS" | "BLOCKED" | "DONE" | "CANCELLED"
+  status String @default("NOT_STARTED")
+  // Priority: "LOW" | "MEDIUM" | "HIGH" | "CRITICAL"
+  priority String @default("MEDIUM")
+
+  dueDate       DateTime?
+  startedAt     DateTime?
+  completedAt   DateTime?
+  blockedReason String?
+
+  // Updated only when `status` changes (not on every edit) — drives stalled-task detection.
+  lastStatusChangeAt DateTime @default(now())
+
+  source   Source? @relation(fields: [sourceId], references: [id])
+  sourceId String?
+
+  notes Note[]
+
+  dependsOn TaskDependency[] @relation("DependentTask")
+  blocks    TaskDependency[] @relation("BlockingTask")
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([projectId])
+  @@index([phaseId])
+  @@index([status])
+  @@index([dueDate])
+}
+
+// Explicit join model for task dependencies: `blockingTask` must complete
+// before `dependentTask` can proceed.
+model TaskDependency {
+  id String @id @default(cuid())
+
+  blockingTask   Task   @relation("BlockingTask", fields: [blockingTaskId], references: [id], onDelete: Cascade)
+  blockingTaskId String
+
+  dependentTask   Task   @relation("DependentTask", fields: [dependentTaskId], references: [id], onDelete: Cascade)
+  dependentTaskId String
+
+  createdAt DateTime @default(now())
+
+  @@unique([blockingTaskId, dependentTaskId])
+}
+
+model Note {
+  id String @id @default(cuid())
+
+  project   Project? @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  projectId String?
+  task      Task?    @relation(fields: [taskId], references: [id], onDelete: Cascade)
+  taskId    String?
+
+  body String
+
+  source   Source? @relation(fields: [sourceId], references: [id])
+  sourceId String?
+
+  createdAt DateTime @default(now())
+
+  @@index([projectId])
+  @@index([taskId])
+}
+
+// Provenance for any Task/Note. MVP only ever creates SourceType "MANUAL",
+// but this is the extension point for future document/meeting/calendar ingestion.
+model Source {
+  id String @id @default(cuid())
+
+  // SourceType: "MANUAL" | "DOCUMENT" | "MEETING" | "CALENDAR"
+  type        String  @default("MANUAL")
+  label       String?
+  externalRef String?
+  rawContent  String?
+
+  createdAt DateTime @default(now())
+
+  tasks Task[]
+  notes Note[]
+}
