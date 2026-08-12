@@ -40,8 +40,12 @@ yarn-error.log*
 *.tsbuildinfo
 next-env.d.ts
 
+# prisma generated client (regenerated at build time)
 /src/generated/prisma
 
-# prisma local sqlite db
+# prisma local sqlite db (legacy)
 /dev.db
 /dev.db-journal
+
+# embedded-postgres data directory
+/data

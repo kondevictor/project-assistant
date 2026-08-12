@@ -3,34 +3,38 @@
 import { revalidatePath } from "next/cache";
 
 import { prisma } from "@/lib/db";
+import { createPhaseSchema } from "@/lib/validations";
 
-function parseDate(value: FormDataEntryValue | null): Date | null {
+function parseDate(value: string | null | undefined): Date | null {
   if (!value || typeof value !== "string" || value.trim() === "") return null;
   const d = new Date(value);
   return Number.isNaN(d.getTime()) ? null : d;
 }
 
 export async function createPhase(formData: FormData) {
-  const projectId = String(formData.get("projectId") ?? "");
-  const name = String(formData.get("name") ?? "").trim();
-  if (!projectId || !name) throw new Error("Project and phase name are required");
+  const validated = createPhaseSchema.parse({
+    projectId: formData.get("projectId"),
+    name: formData.get("name"),
+    isMilestone: formData.get("isMilestone") === "on",
+    dueDate: formData.get("dueDate"),
+  });
 
   const maxOrder = await prisma.phase.aggregate({
-    where: { projectId },
+    where: { projectId: validated.projectId },
     _max: { order: true },
   });
 
   await prisma.phase.create({
     data: {
-      projectId,
-      name,
-      isMilestone: formData.get("isMilestone") === "on",
-      dueDate: parseDate(formData.get("dueDate")),
+      projectId: validated.projectId,
+      name: validated.name,
+      isMilestone: validated.isMilestone,
+      dueDate: parseDate(validated.dueDate),
       order: (maxOrder._max.order ?? -1) + 1,
     },
   });
 
-  revalidatePath(`/projects/${projectId}`);
+  revalidatePath(`/projects/${validated.projectId}`);
   revalidatePath("/");
 }
 

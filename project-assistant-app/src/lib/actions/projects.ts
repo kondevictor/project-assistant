@@ -4,30 +4,31 @@ import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 
 import { prisma } from "@/lib/db";
-import { PROJECT_STAGES, type ProjectStage } from "@/lib/constants";
+import { type ProjectStage } from "@/lib/constants";
+import { createProjectSchema } from "@/lib/validations";
 
-function parseDate(value: FormDataEntryValue | null): Date | null {
+function parseDate(value: string | null | undefined): Date | null {
   if (!value || typeof value !== "string" || value.trim() === "") return null;
   const d = new Date(value);
   return Number.isNaN(d.getTime()) ? null : d;
 }
 
 export async function createProject(formData: FormData) {
-  const name = String(formData.get("name") ?? "").trim();
-  if (!name) throw new Error("Project name is required");
-
-  const stageRaw = String(formData.get("stage") ?? "INCEPTION");
-  const stage: ProjectStage = PROJECT_STAGES.includes(stageRaw as ProjectStage)
-    ? (stageRaw as ProjectStage)
-    : "INCEPTION";
+  const validated = createProjectSchema.parse({
+    name: formData.get("name"),
+    description: formData.get("description"),
+    stage: formData.get("stage") || "INCEPTION",
+    startDate: formData.get("startDate"),
+    targetDate: formData.get("targetDate"),
+  });
 
   const project = await prisma.project.create({
     data: {
-      name,
-      description: String(formData.get("description") ?? "").trim() || null,
-      stage,
-      startDate: parseDate(formData.get("startDate")),
-      targetDate: parseDate(formData.get("targetDate")),
+      name: validated.name,
+      description: validated.description || null,
+      stage: validated.stage,
+      startDate: parseDate(validated.startDate),
+      targetDate: parseDate(validated.targetDate),
     },
   });
 

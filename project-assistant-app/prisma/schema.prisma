@@ -7,13 +7,12 @@ generator client {
 }
 
 datasource db {
-  provider = "sqlite"
+  provider = "postgresql"
 }
 
-// NOTE: SQLite has no native enum type, so status/priority/stage fields below
-// are plain Strings constrained to a fixed set of values in application code
-// (see src/lib/constants.ts). This keeps the schema portable to Postgres,
-// where we can promote them to real enums later without changing app logic.
+// NOTE: status/priority/stage fields below are plain Strings constrained to a
+// fixed set of values in application code (see src/lib/constants.ts). This
+// keeps the schema portable if we later promote them to real enums.
 
 model Project {
   id          String    @id @default(cuid())

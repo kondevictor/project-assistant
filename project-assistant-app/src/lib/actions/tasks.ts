@@ -3,9 +3,10 @@
 import { revalidatePath } from "next/cache";
 
 import { prisma } from "@/lib/db";
-import { DONE_STATUSES, PRIORITIES, TASK_STATUSES, type Priority, type TaskStatus } from "@/lib/constants";
+import { DONE_STATUSES, type TaskStatus } from "@/lib/constants";
+import { createTaskSchema, updateTaskStatusSchema } from "@/lib/validations";
 
-function parseDate(value: FormDataEntryValue | null): Date | null {
+function parseDate(value: string | null | undefined): Date | null {
   if (!value || typeof value !== "string" || value.trim() === "") return null;
   const d = new Date(value);
   return Number.isNaN(d.getTime()) ? null : d;
@@ -18,47 +19,48 @@ function revalidateTaskViews(projectId: string) {
 }
 
 export async function createTask(formData: FormData) {
-  const projectId = String(formData.get("projectId") ?? "");
-  const title = String(formData.get("title") ?? "").trim();
-  if (!projectId || !title) throw new Error("Project and task title are required");
-
   const phaseIdRaw = String(formData.get("phaseId") ?? "");
   const phaseId = phaseIdRaw && phaseIdRaw !== "none" ? phaseIdRaw : null;
 
-  const priorityRaw = String(formData.get("priority") ?? "MEDIUM");
-  const priority: Priority = PRIORITIES.includes(priorityRaw as Priority)
-    ? (priorityRaw as Priority)
-    : "MEDIUM";
+  const validated = createTaskSchema.parse({
+    projectId: formData.get("projectId"),
+    title: formData.get("title"),
+    description: formData.get("description"),
+    owner: formData.get("owner"),
+    priority: formData.get("priority") || "MEDIUM",
+    dueDate: formData.get("dueDate"),
+    phaseId,
+  });
 
   await prisma.task.create({
     data: {
-      projectId,
-      phaseId,
-      title,
-      description: String(formData.get("description") ?? "").trim() || null,
-      owner: String(formData.get("owner") ?? "").trim() || null,
-      priority,
-      dueDate: parseDate(formData.get("dueDate")),
+      projectId: validated.projectId,
+      phaseId: validated.phaseId || null,
+      title: validated.title,
+      description: validated.description || null,
+      owner: validated.owner || null,
+      priority: validated.priority,
+      dueDate: parseDate(validated.dueDate),
     },
   });
 
-  revalidateTaskViews(projectId);
+  revalidateTaskViews(validated.projectId);
 }
 
 export async function updateTaskStatus(taskId: string, projectId: string, status: TaskStatus) {
-  if (!TASK_STATUSES.includes(status)) throw new Error("Invalid status");
+  const validated = updateTaskStatusSchema.parse({ taskId, projectId, status });
 
   await prisma.task.update({
-    where: { id: taskId },
+    where: { id: validated.taskId },
     data: {
-      status,
+      status: validated.status,
       lastStatusChangeAt: new Date(),
-      startedAt: status === "IN_PROGRESS" ? new Date() : undefined,
-      completedAt: DONE_STATUSES.includes(status) ? new Date() : null,
+      startedAt: validated.status === "IN_PROGRESS" ? new Date() : undefined,
+      completedAt: DONE_STATUSES.includes(validated.status) ? new Date() : null,
     },
   });
 
-  revalidateTaskViews(projectId);
+  revalidateTaskViews(validated.projectId);
 }
 
 export async function setTaskBlockedReason(taskId: string, projectId: string, reason: string) {
