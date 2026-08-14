@@ -20,6 +20,8 @@ jobs:
     defaults:
       run:
         working-directory: project-assistant-app
+    env:
+      DATABASE_URL: postgresql://postgres:postgres@localhost:5432/project_assistant
     services:
       postgres:
         image: postgres:16
@@ -66,23 +68,15 @@ jobs:
 
       - name: Test database connection
         run: npx prisma db execute --stdin <<< "SELECT 1"
-        env:
-          DATABASE_URL: postgresql://postgres:postgres@localhost:5432/project_assistant
 
       - name: Run migrations
         run: npx prisma migrate deploy
-        env:
-          DATABASE_URL: postgresql://postgres:postgres@localhost:5432/project_assistant
 
       - name: Seed database
         run: npm run db:seed
-        env:
-          DATABASE_URL: postgresql://postgres:postgres@localhost:5432/project_assistant
 
       - name: Build static export
         run: npm run build
-        env:
-          DATABASE_URL: postgresql://postgres:postgres@localhost:5432/project_assistant
 
       - name: Upload Pages artifact
         uses: actions/upload-pages-artifact@v3
