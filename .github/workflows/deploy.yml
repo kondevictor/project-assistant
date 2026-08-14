@@ -33,7 +33,7 @@ jobs:
           --health-cmd="pg_isready -U postgres"
           --health-interval=10s
           --health-timeout=5s
-          --health-retries=5
+          --health-retries=10
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -50,6 +50,24 @@ jobs:
 
       - name: Verify Prisma config
         run: npx prisma validate
+
+      - name: Wait for PostgreSQL readiness
+        run: |
+          for i in {1..30}; do
+            if pg_isready -h localhost -p 5432 -U postgres; then
+              echo "PostgreSQL is ready"
+              exit 0
+            fi
+            echo "Waiting for PostgreSQL... ($i/30)"
+            sleep 2
+          done
+          echo "PostgreSQL failed to become ready"
+          exit 1
+
+      - name: Test database connection
+        run: npx prisma db execute --stdin <<< "SELECT 1"
+        env:
+          DATABASE_URL: postgresql://postgres:postgres@localhost:5432/project_assistant
 
       - name: Run migrations
         run: npx prisma migrate deploy
