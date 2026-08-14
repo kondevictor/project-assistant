@@ -33,6 +33,7 @@ model User {
   meetings      Meeting[] @relation("MeetingOrganizer")
   attendedMeetings MeetingAttendee[]
   notifications Notification[]
+  projectEvents ProjectEvent[]
 }
 
 model Project {
@@ -55,6 +56,9 @@ model Project {
   notes       Note[]
   stakeholders Stakeholder[]
   meetings    Meeting[]
+  events      ProjectEvent[]
+  stakeholderTasks StakeholderTask[]
+  generatedDocuments GeneratedDocument[]
 
   @@index([ownerId])
 }
@@ -195,6 +199,7 @@ model Stakeholder {
   notes       String?
 
   meetingAttendees MeetingAttendee[]
+  stakeholderTasks StakeholderTask[]
 
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
@@ -292,4 +297,81 @@ model Notification {
   @@index([userId])
   @@index([read])
   @@index([createdAt])
+}
+
+// Project Events - track updates and milestones
+model ProjectEvent {
+  id        String   @id @default(cuid())
+  projectId String
+  project   Project  @relation(fields: [projectId], references: [id], onDelete: Cascade)
+
+  userId    String?
+  user      User?    @relation(fields: [userId], references: [id])
+
+  type      String   // status_change, milestone_reached, stakeholder_added, meeting_scheduled, custom
+  title     String
+  description String?
+  metadata  Json?    // Additional event data
+
+  createdAt DateTime @default(now())
+
+  @@index([projectId])
+  @@index([createdAt])
+}
+
+// Stakeholder Tasks - tasks assigned to stakeholders with deadlines
+model StakeholderTask {
+  id             String   @id @default(cuid())
+  projectId      String
+  project        Project  @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  stakeholderId  String
+  stakeholder    Stakeholder @relation(fields: [stakeholderId], references: [id], onDelete: Cascade)
+
+  title          String
+  description    String?
+  status         String   @default("pending") // pending, in_progress, completed, overdue
+  priority       String   @default("medium")  // low, medium, high, critical
+  dueDate        DateTime?
+  completedAt    DateTime?
+  reminderSent   Boolean  @default(false)
+
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+
+  @@index([projectId])
+  @@index([stakeholderId])
+  @@index([dueDate])
+  @@index([status])
+}
+
+// Document Templates
+model DocumentTemplate {
+  id          String   @id @default(cuid())
+  name        String
+  type        String   // ncnda, mou, mandate, partnership
+  description String?
+  content     String   // Template content with placeholders
+  documents   GeneratedDocument[]
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+}
+
+// Generated Documents
+model GeneratedDocument {
+  id          String   @id @default(cuid())
+  projectId   String
+  project     Project  @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  templateId  String
+  template    DocumentTemplate @relation(fields: [templateId], references: [id])
+
+  fileName    String
+  fileUrl     String?
+  status      String   @default("pending") // pending, generated, downloaded
+
+  metadata    Json?    // Additional document data
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@index([projectId])
+  @@index([templateId])
 }

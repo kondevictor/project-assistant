@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { LayoutDashboard, FolderKanban, ListChecks, Users, Calendar, Mic, Bell } from "lucide-react";
+import { LayoutDashboard, FolderKanban, ListChecks, Users, Calendar, Mic, Bell, FileText } from "lucide-react";
 
 import { cn } from "@/lib/utils";
 
@@ -14,6 +14,7 @@ const NAV_ITEMS = [
   { href: "/meetings", label: "Meetings", icon: Calendar },
   { href: "/transcriptions", label: "Transcriptions", icon: Mic },
   { href: "/notifications", label: "Notifications", icon: Bell },
+  { href: "/documents", label: "Documents", icon: FileText },
 ];
 
 function isActive(pathname: string, href: string) {

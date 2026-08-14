@@ -5,7 +5,8 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { NewProjectDialog } from "@/components/project/new-project-dialog";
 import { TaskRow } from "@/components/task/task-row";
-import { getDashboardData, type ProjectHealth } from "@/lib/insights";
+import { getDashboardData } from "@/lib/server-insights";
+import type { ProjectHealth } from "@/lib/insights";
 import { STAGE_LABELS, type ProjectStage } from "@/lib/constants";
 
 export const dynamic = "force-dynamic";
