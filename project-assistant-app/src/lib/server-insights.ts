@@ -25,7 +25,11 @@ export async function getDashboardData(now: Date = new Date()) {
     const blockedNoReason = project.tasks.filter((t) => t.status === "BLOCKED" && !t.blockedReason);
 
     const atRiskMilestones = project.phases.filter(
-      (p) => p.isMilestone && p.dueDate && !p.completedAt && p.dueDate.getTime() < now.getTime()
+      (p) => {
+        if (!p.isMilestone || !p.dueDate || p.completedAt) return false;
+        const dueDate = p.dueDate instanceof Date ? p.dueDate : new Date(p.dueDate);
+        return dueDate.getTime() < now.getTime();
+      }
     );
 
     return {
