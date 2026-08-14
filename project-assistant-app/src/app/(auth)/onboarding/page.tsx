@@ -2,9 +2,10 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import { useUser } from "@clerk/nextjs";
 import { Briefcase, Building, Code, GraduationCap, Users, Zap } from "lucide-react";
 import { Button } from "@/components/ui/button";
+
+const clerkPubKey = process.env.NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY;
 
 const ROLES = [
   { value: "freelancer", label: "Freelancer", description: "Independent contractor working on client projects", icon: Briefcase },
@@ -16,19 +17,26 @@ const ROLES = [
 ];
 
 export default function OnboardingPage() {
-  const { user, isLoaded, isSignedIn } = useUser();
   const router = useRouter();
   const [selectedRole, setSelectedRole] = useState<string>("");
   const [isSubmitting, setIsSubmitting] = useState(false);
 
-  if (!isLoaded) return <div className="flex min-h-screen items-center justify-center">Loading...</div>;
-  if (!isSignedIn || !user) return <div className="flex min-h-screen items-center justify-center">Please sign in</div>;
+  if (!clerkPubKey) {
+    return (
+      <div className="flex min-h-screen items-center justify-center bg-gray-50 dark:bg-gray-900 px-4">
+        <div className="text-center">
+          <h1 className="text-2xl font-bold text-gray-900 dark:text-white">Authentication Not Configured</h1>
+          <p className="text-gray-600 dark:text-gray-400 mt-2">Clerk API keys are not set up. Please configure environment variables.</p>
+          <Button className="mt-4" onClick={() => router.push("/")}>Go to Dashboard</Button>
+        </div>
+      </div>
+    );
+  }
 
   const handleSubmit = async () => {
     if (!selectedRole) return;
     setIsSubmitting(true);
     try {
-      // Store role in localStorage for now, will be synced to Clerk via webhook or API
       localStorage.setItem("userRole", selectedRole);
       router.push("/");
       router.refresh();

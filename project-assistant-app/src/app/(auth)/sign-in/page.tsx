@@ -3,7 +3,20 @@
 import { SignIn } from "@clerk/nextjs";
 import { Building2 } from "lucide-react";
 
+const clerkPubKey = process.env.NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY;
+
 export default function SignInPage() {
+  if (!clerkPubKey) {
+    return (
+      <div className="flex min-h-screen items-center justify-center bg-gray-50 dark:bg-gray-900 px-4">
+        <div className="text-center">
+          <h1 className="text-2xl font-bold text-gray-900 dark:text-white">Authentication Not Configured</h1>
+          <p className="text-gray-600 dark:text-gray-400 mt-2">Clerk API keys are not set up. Please configure environment variables.</p>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="flex min-h-screen items-center justify-center bg-gray-50 dark:bg-gray-900 px-4">
       <div className="w-full max-w-md">
