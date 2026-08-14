@@ -3,6 +3,7 @@
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 
+import { auth } from "@clerk/nextjs/server";
 import { prisma } from "@/lib/db";
 import { type ProjectStage } from "@/lib/constants";
 import { createProjectSchema } from "@/lib/validations";
@@ -14,6 +15,9 @@ function parseDate(value: string | null | undefined): Date | null {
 }
 
 export async function createProject(formData: FormData) {
+  const { userId } = await auth();
+  if (!userId) throw new Error("Unauthorized");
+
   const validated = createProjectSchema.parse({
     name: formData.get("name"),
     description: formData.get("description"),
@@ -29,6 +33,7 @@ export async function createProject(formData: FormData) {
       stage: validated.stage,
       startDate: parseDate(validated.startDate),
       targetDate: parseDate(validated.targetDate),
+      ownerId: userId,
     },
   });
 
@@ -38,6 +43,9 @@ export async function createProject(formData: FormData) {
 }
 
 export async function updateProjectStage(projectId: string, stage: ProjectStage) {
+  const { userId } = await auth();
+  if (!userId) throw new Error("Unauthorized");
+
   await prisma.project.update({
     where: { id: projectId },
     data: {

@@ -2,6 +2,7 @@
 
 import { revalidatePath } from "next/cache";
 
+import { auth } from "@clerk/nextjs/server";
 import { prisma } from "@/lib/db";
 import { createPhaseSchema } from "@/lib/validations";
 
@@ -12,6 +13,9 @@ function parseDate(value: string | null | undefined): Date | null {
 }
 
 export async function createPhase(formData: FormData) {
+  const { userId } = await auth();
+  if (!userId) throw new Error("Unauthorized");
+
   const validated = createPhaseSchema.parse({
     projectId: formData.get("projectId"),
     name: formData.get("name"),
@@ -39,6 +43,9 @@ export async function createPhase(formData: FormData) {
 }
 
 export async function togglePhaseComplete(phaseId: string, projectId: string, completed: boolean) {
+  const { userId } = await auth();
+  if (!userId) throw new Error("Unauthorized");
+
   await prisma.phase.update({
     where: { id: phaseId },
     data: { completedAt: completed ? new Date() : null },

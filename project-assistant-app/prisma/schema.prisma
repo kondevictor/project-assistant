@@ -14,6 +14,27 @@ datasource db {
 // fixed set of values in application code (see src/lib/constants.ts). This
 // keeps the schema portable if we later promote them to real enums.
 
+model User {
+  id            String    @id @default(cuid())
+  clerkId       String    @unique
+  email         String    @unique
+  name          String?
+  imageUrl      String?
+  role          String?   // freelancer, consultant, developer, project_manager, executive, student
+  onboardingComplete Boolean @default(false)
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+
+  projects      Project[]
+  tasks         Task[]    @relation("TaskOwner")
+  assignedTasks Task[]    @relation("TaskAssignee")
+  notes         Note[]
+  stakeholders  Stakeholder[]
+  meetings      Meeting[] @relation("MeetingOrganizer")
+  attendedMeetings MeetingAttendee[]
+  notifications Notification[]
+}
+
 model Project {
   id          String    @id @default(cuid())
   name        String
@@ -26,9 +47,16 @@ model Project {
   createdAt   DateTime  @default(now())
   updatedAt   DateTime  @updatedAt
 
-  phases Phase[]
-  tasks  Task[]
-  notes  Note[]
+  ownerId     String
+  owner       User      @relation(fields: [ownerId], references: [id])
+
+  phases      Phase[]
+  tasks       Task[]
+  notes       Note[]
+  stakeholders Stakeholder[]
+  meetings    Meeting[]
+
+  @@index([ownerId])
 }
 
 model Phase {
@@ -43,7 +71,7 @@ model Phase {
   createdAt   DateTime  @default(now())
   updatedAt   DateTime  @updatedAt
 
-  tasks Task[]
+  tasks       Task[]
 
   @@index([projectId])
 }
@@ -57,7 +85,10 @@ model Task {
 
   title       String
   description String?
-  owner       String?
+  ownerId     String?
+  owner       User?   @relation("TaskOwner", fields: [ownerId], references: [id])
+  assigneeId  String?
+  assignee    User?   @relation("TaskAssignee", fields: [assigneeId], references: [id])
 
   // TaskStatus: "NOT_STARTED" | "IN_PROGRESS" | "BLOCKED" | "DONE" | "CANCELLED"
   status String @default("NOT_STARTED")
@@ -87,6 +118,8 @@ model Task {
   @@index([phaseId])
   @@index([status])
   @@index([dueDate])
+  @@index([ownerId])
+  @@index([assigneeId])
 }
 
 // Explicit join model for task dependencies: `blockingTask` must complete
@@ -106,28 +139,32 @@ model TaskDependency {
 }
 
 model Note {
-  id String @id @default(cuid())
+  id        String   @id @default(cuid())
 
   project   Project? @relation(fields: [projectId], references: [id], onDelete: Cascade)
   projectId String?
   task      Task?    @relation(fields: [taskId], references: [id], onDelete: Cascade)
   taskId    String?
 
-  body String
+  authorId  String
+  author    User     @relation(fields: [authorId], references: [id])
 
-  source   Source? @relation(fields: [sourceId], references: [id])
-  sourceId String?
+  body      String
+
+  source    Source?  @relation(fields: [sourceId], references: [id])
+  sourceId  String?
 
   createdAt DateTime @default(now())
 
   @@index([projectId])
   @@index([taskId])
+  @@index([authorId])
 }
 
 // Provenance for any Task/Note. MVP only ever creates SourceType "MANUAL",
 // but this is the extension point for future document/meeting/calendar ingestion.
 model Source {
-  id String @id @default(cuid())
+  id        String   @id @default(cuid())
 
   // SourceType: "MANUAL" | "DOCUMENT" | "MEETING" | "CALENDAR"
   type        String  @default("MANUAL")
@@ -135,8 +172,124 @@ model Source {
   externalRef String?
   rawContent  String?
 
-  createdAt DateTime @default(now())
+  createdAt   DateTime @default(now())
 
   tasks Task[]
   notes Note[]
+}
+
+// Stakeholder model for project stakeholders with contact details
+model Stakeholder {
+  id          String   @id @default(cuid())
+  projectId   String
+  project     Project  @relation(fields: [projectId], references: [id], onDelete: Cascade)
+
+  userId      String?
+  user        User?    @relation(fields: [userId], references: [id])
+
+  name        String
+  email       String?
+  phone       String?
+  company     String?
+  role        String   // stakeholder, team_member, partner, facilitator, investor, developer, manufacturer, supplier
+  notes       String?
+
+  meetingAttendees MeetingAttendee[]
+
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@index([projectId])
+  @@index([userId])
+  @@index([email])
+}
+
+// Meeting model for scheduling meetings
+model Meeting {
+  id          String   @id @default(cuid())
+  projectId   String
+  project     Project  @relation(fields: [projectId], references: [id], onDelete: Cascade)
+
+  organizerId String
+  organizer   User     @relation("MeetingOrganizer", fields: [organizerId], references: [id])
+
+  title       String
+  description String?
+  startTime   DateTime
+  endTime     DateTime
+  location    String?      // Physical location or "Online"
+  meetingUrl  String?      // Google Meet/Zoom link
+  meetingType String?      // "google_meet", "zoom", "teams", "in_person"
+  status      String  @default("scheduled") // scheduled, in_progress, completed, cancelled
+
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  attendees   MeetingAttendee[]
+  transcription Transcription?
+
+  @@index([projectId])
+  @@index([organizerId])
+  @@index([startTime])
+  @@index([status])
+}
+
+// Meeting attendees (many-to-many between Meeting and User/Stakeholder)
+model MeetingAttendee {
+  id        String   @id @default(cuid())
+  meetingId String
+  meeting   Meeting  @relation(fields: [meetingId], references: [id], onDelete: Cascade)
+
+  userId    String?
+  user      User?    @relation(fields: [userId], references: [id])
+
+  stakeholderId String?
+  stakeholder   Stakeholder? @relation(fields: [stakeholderId], references: [id], onDelete: Cascade)
+
+  status    String   @default("pending") // pending, accepted, declined, tentative
+
+  createdAt DateTime @default(now())
+
+  @@unique([meetingId, userId])
+  @@unique([meetingId, stakeholderId])
+  @@index([meetingId])
+  @@index([userId])
+  @@index([stakeholderId])
+}
+
+// Meeting transcription
+model Transcription {
+  id        String   @id @default(cuid())
+  meetingId String   @unique
+  meeting   Meeting  @relation(fields: [meetingId], references: [id], onDelete: Cascade)
+
+  audioUrl  String?      // URL to audio recording
+  transcript String?     // Full transcript text
+  summary   String?      // AI-generated summary
+  actionItems String?    // Extracted action items
+  language  String  @default("en")
+  duration  Int?         // Duration in seconds
+  status    String  @default("processing") // processing, completed, failed
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+// Notifications
+model Notification {
+  id        String   @id @default(cuid())
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  type      String   // email, in_app, push
+  title     String
+  message   String
+  data      Json?    // Additional data (meetingId, taskId, etc.)
+  read      Boolean  @default(false)
+
+  createdAt DateTime @default(now())
+
+  @@index([userId])
+  @@index([read])
+  @@index([createdAt])
 }

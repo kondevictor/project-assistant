@@ -7,6 +7,8 @@ import { NewProjectDialog } from "@/components/project/new-project-dialog";
 import { STAGE_LABELS, type ProjectStage } from "@/lib/constants";
 import { computeProjectHealth, type ProjectHealth } from "@/lib/insights";
 
+export const dynamic = "force-dynamic";
+
 const HEALTH_VARIANT: Record<ProjectHealth, "success" | "warn" | "destructive"> = {
   GREEN: "success",
   YELLOW: "warn",

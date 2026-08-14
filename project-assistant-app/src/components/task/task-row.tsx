@@ -18,7 +18,7 @@ export type TaskRowData = {
   id: string;
   projectId: string;
   title: string;
-  owner: string | null;
+  ownerId: string | null;
   status: string;
   priority: string;
   dueDate: Date | null;
@@ -55,7 +55,7 @@ export function TaskRow({ task, showProjectLink }: { task: TaskRowData; showProj
               Due {task.dueDate.toLocaleDateString()}
             </span>
           )}
-          {task.owner && <span>{task.owner}</span>}
+          {task.ownerId && <span>{task.ownerId}</span>}
           {task.status === "BLOCKED" && task.blockedReason && <span>Blocked: {task.blockedReason}</span>}
           {showProjectLink && (
             <Link href={`/projects/${task.projectId}`} className="underline underline-offset-2">

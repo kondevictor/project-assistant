@@ -8,6 +8,8 @@ import { TaskRow } from "@/components/task/task-row";
 import { getDashboardData, type ProjectHealth } from "@/lib/insights";
 import { STAGE_LABELS, type ProjectStage } from "@/lib/constants";
 
+export const dynamic = "force-dynamic";
+
 const HEALTH_VARIANT: Record<ProjectHealth, "success" | "warn" | "destructive"> = {
   GREEN: "success",
   YELLOW: "warn",

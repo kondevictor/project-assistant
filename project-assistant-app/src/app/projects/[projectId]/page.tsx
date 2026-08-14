@@ -11,11 +11,6 @@ import { TaskRow } from "@/components/task/task-row";
 import { computeProjectHealth, type ProjectHealth } from "@/lib/insights";
 import type { ProjectStage } from "@/lib/constants";
 
-export async function generateStaticParams() {
-  const projects = await prisma.project.findMany({ select: { id: true } });
-  return projects.map((p) => ({ projectId: p.id }));
-}
-
 const HEALTH_VARIANT: Record<ProjectHealth, "success" | "warn" | "destructive"> = {
   GREEN: "success",
   YELLOW: "warn",

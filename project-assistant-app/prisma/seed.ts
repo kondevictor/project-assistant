@@ -15,6 +15,19 @@ async function main() {
     return;
   }
 
+  // Create a demo user first (matches Clerk user in development)
+  const demoUser = await prisma.user.upsert({
+    where: { clerkId: "demo-user-clerk-id" },
+    update: {},
+    create: {
+      clerkId: "demo-user-clerk-id",
+      email: "demo@projectassistant.local",
+      name: "Demo User",
+      role: "freelancer",
+      onboardingComplete: true,
+    },
+  });
+
   const now = new Date();
   const daysAgo = (n: number) => new Date(now.getTime() - n * 24 * 60 * 60 * 1000);
   const daysFromNow = (n: number) => new Date(now.getTime() + n * 24 * 60 * 60 * 1000);
@@ -26,6 +39,7 @@ async function main() {
       stage: "EXECUTION",
       startDate: daysAgo(30),
       targetDate: daysFromNow(14),
+      ownerId: demoUser.id,
       phases: {
         create: [
           { name: "Design", isMilestone: true, dueDate: daysAgo(10), completedAt: daysAgo(9), order: 0 },
@@ -49,7 +63,7 @@ async function main() {
         title: "Wireframe high-fidelity mockups",
         status: "DONE",
         priority: "HIGH",
-        owner: "You",
+        ownerId: demoUser.id,
         completedAt: daysAgo(9),
         lastStatusChangeAt: daysAgo(9),
       },
@@ -59,7 +73,7 @@ async function main() {
         title: "Implement checkout flow",
         status: "IN_PROGRESS",
         priority: "HIGH",
-        owner: "You",
+        ownerId: demoUser.id,
         dueDate: daysFromNow(2),
         lastStatusChangeAt: daysAgo(10),
       },
@@ -109,6 +123,7 @@ async function main() {
       stage: "PLANNING",
       startDate: daysAgo(5),
       targetDate: daysFromNow(45),
+      ownerId: demoUser.id,
     },
   });
 
@@ -127,7 +142,7 @@ async function main() {
         title: "Evaluate new hosting platform",
         status: "IN_PROGRESS",
         priority: "HIGH",
-        owner: "You",
+        ownerId: demoUser.id,
         dueDate: daysFromNow(7),
         lastStatusChangeAt: daysAgo(2),
       },
@@ -142,6 +157,7 @@ async function main() {
       startDate: daysAgo(60),
       targetDate: daysAgo(5),
       completedAt: null,
+      ownerId: demoUser.id,
     },
   });
 
