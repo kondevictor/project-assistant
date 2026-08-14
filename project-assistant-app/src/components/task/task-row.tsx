@@ -4,7 +4,7 @@ import { AlertTriangle, Clock } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { StatusMenu } from "@/components/task/status-menu";
 import { PRIORITY_LABELS, type Priority, type TaskStatus } from "@/lib/constants";
-import { isOverdue, isStalled } from "@/lib/insights";
+import { isOverdue, isStalled, toDate } from "@/lib/insights";
 import { cn } from "@/lib/utils";
 
 const PRIORITY_VARIANT: Record<Priority, "outline" | "warn" | "destructive"> = {
@@ -21,8 +21,8 @@ export type TaskRowData = {
   ownerId: string | null;
   status: string;
   priority: string;
-  dueDate: Date | null;
-  lastStatusChangeAt: Date;
+  dueDate: Date | string | null;
+  lastStatusChangeAt: Date | string;
   blockedReason: string | null;
 };
 
@@ -31,6 +31,7 @@ export function TaskRow({ task, showProjectLink }: { task: TaskRowData; showProj
   const priority = task.priority as Priority;
   const overdue = isOverdue(task);
   const stalled = isStalled(task);
+  const dueDate = toDate(task.dueDate);
 
   return (
     <div className="flex flex-col gap-2 rounded-lg border p-3 sm:flex-row sm:items-center sm:justify-between">
@@ -50,9 +51,9 @@ export function TaskRow({ task, showProjectLink }: { task: TaskRowData; showProj
           )}
         </div>
         <div className="text-muted-foreground flex flex-wrap items-center gap-x-3 gap-y-1 text-xs">
-          {task.dueDate && (
+          {dueDate && (
             <span className={cn(overdue && "text-destructive font-medium")}>
-              Due {task.dueDate.toLocaleDateString()}
+              Due {dueDate.toLocaleDateString()}
             </span>
           )}
           {task.ownerId && <span>{task.ownerId}</span>}

@@ -6,7 +6,7 @@ type TaskLike = {
   lastStatusChangeAt: Date | string;
 };
 
-function toDate(date: Date | string | null | undefined): Date | null {
+export function toDate(date: Date | string | null | undefined): Date | null {
   if (!date) return null;
   if (date instanceof Date) return date;
   const d = new Date(date);

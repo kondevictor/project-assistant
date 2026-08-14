@@ -107,7 +107,7 @@ export default async function DashboardPage() {
 
                     {project.targetDate && (
                       <p className="text-muted-foreground text-xs">
-                        Target: {project.targetDate.toLocaleDateString()}
+                        Target: {project.targetDate instanceof Date ? project.targetDate.toLocaleDateString() : new Date(project.targetDate).toLocaleDateString()}
                       </p>
                     )}
                   </CardContent>
