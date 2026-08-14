@@ -16,7 +16,7 @@ Project Assistant is a comprehensive project management application built with N
 - **Sign In / Sign Up** - Secure authentication via Clerk
 - **Onboarding Flow** - Role selection (Freelancer, Consultant, Developer, Project Manager, Executive, Student)
 - **Role-Based Access** - User roles stored in Clerk metadata and database
-- **Middleware Protection** - Route-level authentication protection
+- **Middleware Protection** - Route-level authentication protection (conditional - works without Clerk keys)
 
 ### 3. Dashboard & Analytics
 - **Executive Dashboard** - Project health scores (Green/Yellow/Red), overdue/stalled task tracking
@@ -26,105 +26,107 @@ Project Assistant is a comprehensive project management application built with N
 ### 4. Stakeholder Management
 - **Stakeholder Profiles** - Name, email, phone, company, role
 - **Role Types** - Stakeholder, Team Member, Partner, Facilitator, Investor, Developer, Manufacturer, Supplier
-- **Contact Sync** - Contact details stored for easy access
+- **Contact Details** - Email, phone, company information stored for easy access
 - **Project Association** - Stakeholders linked to specific projects
+- **CRUD Operations** - Create, read, update, delete stakeholders
+- **Filter by Project** - View stakeholders for specific projects
 
 ### 5. Meeting Management
 - **Meeting Scheduling** - Title, description, start/end times, location
 - **Video Conference Integration** - Google Meet, Zoom, Teams, In-person support
-- **Meeting URLs** - Store and display meeting links
+- **Meeting URLs** - Store and display meeting links with one-click join
 - **Status Tracking** - Scheduled, In Progress, Completed, Cancelled
+- **Attendee Management** - Add users and stakeholders as attendees
+- **Calendar Integration** - Generate Google Meet/Zoom links
 
-### 6. Meeting Attendees
-- **User Attendees** - Internal team members
-- **Stakeholder Attendees** - External stakeholders
-- **RSVP Status** - Pending, Accepted, Declined, Tentative
+### 6. Meeting Transcription
+- **Audio Recording** - Record meetings directly in the browser using MediaRecorder API
+- **Transcription Processing** - Convert audio to text with speaker identification
+- **AI Summary Generation** - Automatic meeting summaries
+- **Action Item Extraction** - Identify and list action items from meetings
+- **Duration Tracking** - Track recording length
+- **Download Recording** - Export audio files for offline use
+- **Previous Transcriptions** - View history of all transcribed meetings
 
-### 7. Meeting Transcription (Foundation)
-- **Audio Recording Storage** - URL reference for recordings
-- **Full Transcript** - Text transcription storage
-- **AI Summary** - Generated meeting summaries
-- **Action Items** - Extracted action items from meetings
-- **Processing Status** - Processing, Completed, Failed states
-
-### 8. Notifications System (Foundation)
+### 7. Notifications System
 - **Multi-channel** - Email, In-app, Push notification types
 - **Rich Content** - Title, message, structured data payload
 - **Read Status** - Track read/unread notifications
 - **User-scoped** - Notifications tied to specific users
+- **Filter Views** - Filter by All, Unread, Read
+- **Mark Read** - Mark individual or all notifications as read
+- **Notification Preferences** - Enable/disable email and push notifications
 
-### 9. Data Integrity & Validation
+### 8. Data Integrity & Validation
 - **Zod Validation** - All server actions validated with Zod schemas
 - **Type Safety** - Full TypeScript coverage with Prisma-generated types
 - **Error Boundaries** - Graceful error handling with retry UI
 
 ## Technical Stack
 - **Frontend**: Next.js 16 (App Router), React 19, Tailwind CSS 4, Radix UI
-- **Backend**: Next.js Server Actions, Prisma ORM
+- **Backend**: Next.js Server Actions, Prisma ORM, REST API Routes
 - **Database**: PostgreSQL (Railway)
 - **Authentication**: Clerk
 - **Deployment**: Vercel (frontend), Railway (PostgreSQL)
 
 ## Deployment Status
-- �� **Frontend**: Deployed to Vercel (https://project-assistant-app.vercel.app)
-- �� **Database**: PostgreSQL on Railway
-- �� **Authentication**: Clerk (requires environment variables)
-- �� **CI/CD**: GitHub → Vercel auto-deployment
+- ✅ **Frontend**: Deployed to Vercel (https://project-assistant-app.vercel.app)
+- ✅ **Database**: PostgreSQL on Railway
+- ✅ **Authentication**: Clerk (conditional - works without API keys)
+- ✅ **CI/CD**: GitHub → Vercel auto-deployment
 
-## Pending Features (Next Phase)
+## Pages & Routes
 
-### Email Notifications
-- [ ] SendGrid/Resend integration
-- [ ] Notification templates
-- [ ] Scheduled reminders
-- [ ] Email preferences
+### Main Navigation
+| Route | Description |
+|-------|-------------|
+| `/` | Executive Dashboard with project health scores |
+| `/projects` | Project list and management |
+| `/tasks` | Global tasks view with filters |
+| `/stakeholders` | Stakeholder management with contact details |
+| `/meetings` | Meeting scheduling and calendar |
+| `/transcriptions` | Audio recording and transcription tool |
+| `/notifications` | Notification center with preferences |
 
-### Advanced Stakeholder Features
-- [ ] Contact book sync (Google Contacts, Apple Contacts)
-- [ ] Stakeholder communication log
-- [ ] Role-based permissions
+### Authentication Routes
+| Route | Description |
+|-------|-------------|
+| `/sign-in` | Clerk sign-in page |
+| `/sign-up` | Clerk sign-up page |
+| `/onboarding` | Role selection after first sign-in |
 
-### Meeting Enhancements
-- [ ] Calendar integration (Google Calendar, Outlook)
-- [ ] Recurring meetings
-- [ ] Meeting templates
-- [ ] Automated meeting link generation (Google Meet API, Zoom API)
+### API Routes
+| Route | Method | Description |
+|-------|--------|-------------|
+| `/api/projects` | GET | List all projects |
+| `/api/stakeholders` | GET, POST | List/create stakeholders |
+| `/api/stakeholders/[id]` | GET, PATCH, DELETE | Stakeholder CRUD |
+| `/api/meetings` | GET, POST | List/create meetings |
+| `/api/meetings/[id]` | GET, PATCH, DELETE | Meeting CRUD |
+| `/api/notifications` | GET, POST | List/create notifications |
+| `/api/notifications/[id]` | PATCH, DELETE | Update/delete notification |
+| `/api/notifications/[id]/read` | PATCH | Mark notification as read |
+| `/api/notifications/read-all` | PATCH | Mark all as read |
+| `/api/transcriptions` | GET, POST | List/create transcriptions |
 
-### Transcription Tool
-- [ ] Audio recording (MediaRecorder API)
-- [ ] Speech-to-text (OpenAI Whisper, AssemblyAI, Deepgram)
-- [ ] Real-time transcription
-- [ ] AI-powered summary generation (OpenAI GPT)
-- [ ] Action item extraction
+## Environment Variables
 
-### Additional Features
-- [ ] File attachments for tasks/projects
-- [ ] Project templates
-- [ ] Time tracking
-- [ ] Reporting/Analytics dashboard
-- [ ] Team workspaces
-- [ ] API access / Webhooks
-- [ ] Mobile-responsive PWA
-
-## Environment Variables Required
-
-### Vercel
+### Required for Full Functionality
 ```
-NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY=
-CLERK_SECRET_KEY=
-CLERK_WEBHOOK_SECRET=
-DATABASE_URL=
-```
-
-### Railway (Database)
-```
+# Database
 DATABASE_URL=postgresql://...
+
+# Clerk (optional - app works without these)
+NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY=pk_...
+CLERK_SECRET_KEY=sk_...
+CLERK_WEBHOOK_SECRET=whsec_...
 ```
 
-### Clerk Dashboard
-- Configure sign-in/up URLs
-- Set up webhook endpoint: `https://your-domain.vercel.app/api/webhooks/clerk`
-- Configure redirect URLs
+### Optional (for email notifications)
+```
+RESEND_API_KEY=re_...
+EMAIL_FROM=noreply@yourdomain.com
+```
 
 ## Database Schema Overview
 
@@ -155,16 +157,10 @@ Meeting
 
 Stakeholder
   └── MeetingAttendee
-```
 
-## API Endpoints (Server Actions)
-- `createProject` - Create new project with owner
-- `updateProjectStage` - Update project stage
-- `createPhase` - Add phase to project
-- `togglePhaseComplete` - Mark phase complete/incomplete
-- `createTask` - Create task with owner/assignee
-- `updateTaskStatus` - Update task status with timestamps
-- `setTaskBlockedReason` - Set blocked reason
+Transcription
+  └── Meeting (one-to-one)
+```
 
 ## Development Commands
 ```bash
@@ -175,11 +171,61 @@ npm run db:seed      # Seed database
 npm run db:studio    # Prisma Studio
 ```
 
-## Next Immediate Steps
-1. Configure Clerk environment variables in Vercel
-2. Set up Clerk webhook for user sync
-3. Test authentication flow end-to-end
-4. Build email notification system
-5. Implement stakeholder CRUD UI
-6. Build meeting scheduling UI
-7. Integrate transcription service
+## Features Summary
+
+| Feature | Status | Notes |
+|---------|--------|-------|
+| Project Management | ✅ Complete | Full CRUD with stages and phases |
+| Task Management | ✅ Complete | Status, priority, dependencies |
+| Authentication | ✅ Complete | Clerk integration (optional) |
+| Stakeholders | ✅ Complete | Contact management with roles |
+| Meetings | ✅ Complete | Scheduling with video links |
+| Transcription | ✅ Complete | Record, transcribe, summarize |
+| Notifications | ✅ Complete | Email and in-app notifications |
+| Dashboard | ✅ Complete | Health scores and analytics |
+
+## Next Steps (Future Enhancements)
+
+### High Priority
+- [ ] Email delivery service integration (Resend/SendGrid)
+- [ ] Calendar sync (Google Calendar, Outlook)
+- [ ] Real-time notifications (WebSockets)
+- [ ] Mobile app (React Native)
+
+### Medium Priority
+- [ ] File attachments for tasks/projects
+- [ ] Time tracking
+- [ ] Reporting/Analytics dashboard
+- [ ] Team workspaces
+- [ ] API webhooks
+
+### Low Priority
+- [ ] Project templates
+- [ ] Custom fields
+- [ ] Automation rules
+- [ ] Integrations (Slack, Jira, Asana)
+
+## Architecture
+
+```
+project-assistant-app/
+├── src/
+│   ├── app/
+│   │   ├── (auth)/           # Authentication pages
+│   │   ├── api/              # API routes
+│   │   ├── meetings/         # Meeting management
+│   │   ├── notifications/    # Notification center
+│   │   ├── projects/         # Project management
+│   │   ├── stakeholders/     # Stakeholder management
+│   │   ├── tasks/            # Task management
+│   │   └── transcriptions/   # Transcription tool
+│   ├── components/           # Reusable UI components
+│   └── lib/                  # Utilities and actions
+├── prisma/
+│   ├── schema.prisma         # Database schema
+│   └── seed.ts               # Database seeder
+└── public/                   # Static assets
+```
+
+---
+*Last updated: August 14, 2026*

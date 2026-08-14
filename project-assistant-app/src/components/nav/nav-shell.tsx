@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { LayoutDashboard, FolderKanban, ListChecks } from "lucide-react";
+import { LayoutDashboard, FolderKanban, ListChecks, Users, Calendar, Mic, Bell } from "lucide-react";
 
 import { cn } from "@/lib/utils";
 
@@ -10,6 +10,10 @@ const NAV_ITEMS = [
   { href: "/", label: "Dashboard", icon: LayoutDashboard },
   { href: "/projects", label: "Projects", icon: FolderKanban },
   { href: "/tasks", label: "Tasks", icon: ListChecks },
+  { href: "/stakeholders", label: "Stakeholders", icon: Users },
+  { href: "/meetings", label: "Meetings", icon: Calendar },
+  { href: "/transcriptions", label: "Transcriptions", icon: Mic },
+  { href: "/notifications", label: "Notifications", icon: Bell },
 ];
 
 function isActive(pathname: string, href: string) {
