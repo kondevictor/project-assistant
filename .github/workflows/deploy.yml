@@ -20,6 +20,20 @@ jobs:
     defaults:
       run:
         working-directory: project-assistant-app
+    services:
+      postgres:
+        image: postgres:16
+        env:
+          POSTGRES_DB: project_assistant
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: postgres
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd="pg_isready -U postgres"
+          --health-interval=10s
+          --health-timeout=5s
+          --health-retries=5
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -34,13 +48,8 @@ jobs:
       - name: Install dependencies
         run: npm ci
 
-      - name: Start PostgreSQL
-        uses: harmonious/postgresql-action@v1
-        with:
-          postgresql db: project_assistant
-          postgresql user: postgres
-          postgresql password: postgres
-          postgresql version: "16"
+      - name: Wait for PostgreSQL
+        run: sleep 5
 
       - name: Run migrations
         run: npx prisma migrate deploy
