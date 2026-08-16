@@ -27,17 +27,22 @@ export function NewTaskSheet({
   defaultPhaseId,
   triggerLabel = "Add Task",
   stakeholders = [],
+  onCreated,
+  onAddStakeholder,
 }: {
   projectId: string;
   phases?: Phase[];
   defaultPhaseId?: string;
   triggerLabel?: string;
   stakeholders?: Stakeholder[];
+  onCreated?: () => void;
+  onAddStakeholder?: () => void;
 }) {
   const [open, setOpen] = useState(false);
 
   async function action(formData: FormData) {
     await createTask(formData);
+    onCreated?.();
     setOpen(false);
   }
 
@@ -98,9 +103,9 @@ export function NewTaskSheet({
               </Select>
             </div>
           )}
-          {stakeholders.length > 0 && (
-            <div className="flex flex-col gap-1.5">
-              <Label htmlFor="stakeholderId">Assigned To (Person)</Label>
+          <div className="flex flex-col gap-1.5">
+            <Label htmlFor="stakeholderId">Assigned To (Person)</Label>
+            {stakeholders.length > 0 ? (
               <Select name="stakeholderId" defaultValue="none">
                 <SelectTrigger id="stakeholderId" className="w-full">
                   <SelectValue placeholder="Select a person" />
@@ -114,8 +119,15 @@ export function NewTaskSheet({
                   ))}
                 </SelectContent>
               </Select>
-            </div>
-          )}
+            ) : (
+              <div className="flex items-center gap-3 text-sm text-muted-foreground">
+                <span>No stakeholders in this project yet</span>
+                <Button type="button" variant="link" size="sm" onClick={onAddStakeholder}>
+                  Add one
+                </Button>
+              </div>
+            )}
+          </div>
           <div className="flex flex-col gap-1.5">
             <Label htmlFor="status">Status</Label>
             <Select name="status" defaultValue="NOT_STARTED">

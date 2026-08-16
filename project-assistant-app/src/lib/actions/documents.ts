@@ -395,11 +395,26 @@ export async function generateDocument(input: DocumentRequestInput) {
   const buffer = await Packer.toBuffer(doc);
   const base64 = buffer.toString("base64");
 
+  // Look up or create DocumentTemplate to get valid templateId
+  let documentTemplate = await db.documentTemplate.findFirst({
+    where: { type: validated.templateType },
+  });
+  if (!documentTemplate) {
+    documentTemplate = await db.documentTemplate.create({
+      data: {
+        type: validated.templateType,
+        name: template.name,
+        description: template.name,
+        content: "",
+      },
+    });
+  }
+
   // Save to database
   const document = await db.generatedDocument.create({
     data: {
       projectId: validated.projectId,
-      templateId: validated.templateType,
+      templateId: documentTemplate.id,
       fileName: `${template.name.replace(/\s+/g, "_")}_${project.name.replace(/\s+/g, "_")}.docx`,
       status: "generated",
       metadata: {

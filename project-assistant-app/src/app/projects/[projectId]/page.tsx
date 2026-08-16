@@ -17,6 +17,8 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { TaskRow } from "@/components/task/task-row";
 import { StageMenu } from "@/components/project/stage-menu";
 import { NewTaskSheet } from "@/components/task/new-task-sheet";
+import { AddStakeholderDialog } from "@/components/project/add-stakeholder-dialog";
+import { ScheduleMeetingDialog } from "@/components/project/schedule-meeting-dialog";
 
 interface Project {
   id: string;
@@ -25,7 +27,7 @@ interface Project {
   stage: string;
   startDate: string | null;
   targetDate: string | null;
-  owner: { name: string | null; email: string };
+  owner: { id: string; name: string | null; email: string };
   phases: Array<{
     id: string;
     name: string;
@@ -94,6 +96,12 @@ export default function ProjectDetailPage() {
 
   // Report generation state
   const [generatingReport, setGeneratingReport] = useState(false);
+
+  // Add stakeholder dialog
+  const [showAddStakeholderDialog, setShowAddStakeholderDialog] = useState(false);
+
+  // Schedule meeting dialog
+  const [showScheduleMeetingDialog, setShowScheduleMeetingDialog] = useState(false);
 
   useEffect(() => {
     fetchProject();
@@ -379,6 +387,8 @@ export default function ProjectDetailPage() {
                             defaultPhaseId={phase.id}
                             triggerLabel="Add Task"
                             stakeholders={project.stakeholders?.map((s: any) => ({ id: s.id, name: s.name })) || []}
+                            onCreated={fetchProject}
+                            onAddStakeholder={() => setShowAddStakeholderDialog(true)}
                           />
                         </div>
                       </div>
@@ -404,6 +414,8 @@ export default function ProjectDetailPage() {
                 phases={project.phases?.map(p => ({ id: p.id, name: p.name })) || []}
                 triggerLabel="Add Task"
                 stakeholders={project.stakeholders?.map((s: any) => ({ id: s.id, name: s.name })) || []}
+                onCreated={fetchProject}
+                onAddStakeholder={() => setShowAddStakeholderDialog(true)}
               />
             </CardContent>
           </Card>
@@ -415,7 +427,7 @@ export default function ProjectDetailPage() {
         <div className="space-y-4">
           <div className="flex justify-between items-center">
             <h2 className="text-lg font-semibold">Project Stakeholders</h2>
-            <Button onClick={() => window.open("/stakeholders", "_blank")}>
+            <Button onClick={() => setShowAddStakeholderDialog(true)}>
               <Plus className="w-4 h-4 mr-2" />
               Add Stakeholder
             </Button>
@@ -427,7 +439,7 @@ export default function ProjectDetailPage() {
                 <Users className="w-12 h-12 mx-auto text-gray-400 mb-4" />
                 <h3 className="text-lg font-medium text-gray-900 mb-2">No stakeholders yet</h3>
                 <p className="text-gray-500 mb-4">Add stakeholders to manage project contacts</p>
-                <Button onClick={() => window.open("/stakeholders", "_blank")}>
+                <Button onClick={() => setShowAddStakeholderDialog(true)}>
                   Add Stakeholders
                 </Button>
               </CardContent>
@@ -462,7 +474,7 @@ export default function ProjectDetailPage() {
         <div className="space-y-4">
           <div className="flex justify-between items-center">
             <h2 className="text-lg font-semibold">Project Meetings</h2>
-            <Button onClick={() => window.open("/meetings", "_blank")}>
+            <Button onClick={() => setShowScheduleMeetingDialog(true)}>
               <Plus className="w-4 h-4 mr-2" />
               Schedule Meeting
             </Button>
@@ -474,7 +486,7 @@ export default function ProjectDetailPage() {
                 <Calendar className="w-12 h-12 mx-auto text-gray-400 mb-4" />
                 <h3 className="text-lg font-medium text-gray-900 mb-2">No meetings yet</h3>
                 <p className="text-gray-500 mb-4">Schedule meetings for this project</p>
-                <Button onClick={() => window.open("/meetings", "_blank")}>
+                <Button onClick={() => setShowScheduleMeetingDialog(true)}>
                   Schedule Meeting
                 </Button>
               </CardContent>
@@ -622,19 +634,28 @@ export default function ProjectDetailPage() {
                 <div className="space-y-4">
                   <div>
                     <label className="text-sm font-medium">Stakeholder</label>
-                    <Select
-                      value={stakeholderTaskForm.stakeholderId}
-                      onValueChange={(v) => setStakeholderTaskForm({ ...stakeholderTaskForm, stakeholderId: v })}
-                    >
-                      <SelectTrigger>
-                        <SelectValue placeholder="Select stakeholder" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        {project.stakeholders?.map((s: any) => (
-                          <SelectItem key={s.id} value={s.id}>{s.name}</SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
+                    {project.stakeholders?.length > 0 ? (
+                      <Select
+                        value={stakeholderTaskForm.stakeholderId}
+                        onValueChange={(v) => setStakeholderTaskForm({ ...stakeholderTaskForm, stakeholderId: v })}
+                      >
+                        <SelectTrigger>
+                          <SelectValue placeholder="Select stakeholder" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {project.stakeholders?.map((s: any) => (
+                            <SelectItem key={s.id} value={s.id}>{s.name}</SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    ) : (
+                      <div className="flex items-center gap-3 text-sm text-muted-foreground">
+                        <span>No stakeholders in this project yet</span>
+                        <Button type="button" variant="link" size="sm" onClick={() => setShowAddStakeholderDialog(true)}>
+                          Add one
+                        </Button>
+                      </div>
+                    )}
                   </div>
                   <div>
                     <label className="text-sm font-medium">Title</label>
@@ -679,7 +700,7 @@ export default function ProjectDetailPage() {
                       />
                     </div>
                   </div>
-                  <Button onClick={handleAddStakeholderTask}>Add Task</Button>
+                  <Button onClick={handleAddStakeholderTask} disabled={!project.stakeholders?.length}>Add Task</Button>
                 </div>
               </DialogContent>
             </Dialog>
@@ -762,6 +783,7 @@ export default function ProjectDetailPage() {
                         <SelectItem value="mou">MOU (Memorandum of Understanding)</SelectItem>
                         <SelectItem value="mandate">Mandate Agreement</SelectItem>
                         <SelectItem value="partnership">Partnership Agreement</SelectItem>
+                        <SelectItem value="contracts">Standard Service Contract</SelectItem>
                       </SelectContent>
                     </Select>
                   </div>
@@ -806,10 +828,27 @@ export default function ProjectDetailPage() {
                   </CardContent>
                 </Card>
               ))}
-            </div>
-          )}
-        </div>
-      )}
-    </div>
+</div>
+           )}
+         </div>
+         )}
+         {project && (
+          <>
+            <AddStakeholderDialog
+              projectId={project.id}
+              open={showAddStakeholderDialog}
+              onOpenChange={setShowAddStakeholderDialog}
+              onCreated={fetchProject}
+            />
+            <ScheduleMeetingDialog
+              projectId={project.id}
+              organizerId={project.owner?.id || "demo-user-clerk-id"}
+              open={showScheduleMeetingDialog}
+              onOpenChange={setShowScheduleMeetingDialog}
+              onCreated={fetchProject}
+            />
+          </>
+        )}
+      </div>
   );
 }
