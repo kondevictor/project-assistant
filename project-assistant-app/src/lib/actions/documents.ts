@@ -16,7 +16,7 @@ import {
 
 const DocumentRequestSchema = z.object({
   projectId: z.string().min(1, "Project ID is required"),
-  templateType: z.enum(["ncnda", "mou", "mandate", "partnership"]),
+  templateType: z.enum(["ncnda", "mou", "mandate", "partnership", "contracts"]),
   metadata: z.any().optional(),
 });
 
@@ -298,6 +298,30 @@ Name: ${data.partner2Signatory || "[Name]"}
 Date: ${data.date || new Date().toLocaleDateString()}
 `,
   },
+  contracts: {
+    name: "Standard Service Contract",
+    content: (data: any) => `
+SERVICE CONTRACT AGREEMENT
+
+This Service Contract Agreement ("Agreement") is made effective as of ${data.date || new Date().toLocaleDateString()} by and between:
+
+CLIENT: ${data.clientName || data.disclosingParty || "[Client Name]"}
+CONTRACTOR: ${data.contractorName || "[Contractor Name]"}
+PROJECT: ${data.projectName || "[Project Name]"}
+
+1. SERVICES PROVIDED
+The Contractor agrees to perform the following services for the Client:
+${data.services || data.projectDescription || "- Deliver project objectives as specified"}
+
+2. DURATION & COMPENSATION
+Commencing ${data.startDate || new Date().toLocaleDateString()}, services shall be billed and rendered upon mutual agreement.
+
+IN WITNESS WHEREOF, the parties hereto have executed this Contract Agreement.
+
+CLIENT SIGNATURE: ____________________ Date: ${data.date || new Date().toLocaleDateString()}
+CONTRACTOR SIGNATURE: ________________ Date: ${data.date || new Date().toLocaleDateString()}
+`,
+  },
 };
 
 export async function generateDocument(input: DocumentRequestInput) {
@@ -416,6 +440,7 @@ export async function initializeTemplates() {
     { name: "MOU", type: "mou", description: "Memorandum of Understanding", content: "" },
     { name: "Mandate", type: "mandate", description: "Mandate Agreement", content: "" },
     { name: "Partnership", type: "partnership", description: "Partnership Agreement", content: "" },
+    { name: "Contract", type: "contracts", description: "Standard Service Contract", content: "" },
   ];
 
   await db.documentTemplate.createMany({ data: templates });

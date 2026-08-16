@@ -10,14 +10,16 @@ export type ProjectStage = (typeof PROJECT_STAGES)[number];
 
 export const TASK_STATUSES = [
   "NOT_STARTED",
+  "PENDING",
   "IN_PROGRESS",
   "BLOCKED",
   "DONE",
+  "FAILED",
   "CANCELLED",
 ] as const;
 export type TaskStatus = (typeof TASK_STATUSES)[number];
 
-export const DONE_STATUSES: TaskStatus[] = ["DONE", "CANCELLED"];
+export const DONE_STATUSES: TaskStatus[] = ["DONE", "CANCELLED", "FAILED"];
 
 export const PRIORITIES = ["LOW", "MEDIUM", "HIGH", "CRITICAL"] as const;
 export type Priority = (typeof PRIORITIES)[number];
@@ -36,9 +38,11 @@ export const STAGE_LABELS: Record<ProjectStage, string> = {
 
 export const STATUS_LABELS: Record<TaskStatus, string> = {
   NOT_STARTED: "Not Started",
+  PENDING: "Pending",
   IN_PROGRESS: "In Progress",
   BLOCKED: "Blocked",
   DONE: "Done",
+  FAILED: "Failed",
   CANCELLED: "Cancelled",
 };
 

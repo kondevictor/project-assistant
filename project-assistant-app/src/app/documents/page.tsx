@@ -27,6 +27,7 @@ const DOCUMENT_TYPES = [
   { value: "mou", label: "MOU", description: "Memorandum of Understanding" },
   { value: "mandate", label: "Mandate", description: "Mandate Agreement" },
   { value: "partnership", label: "Partnership", description: "Partnership Agreement" },
+  { value: "contracts", label: "Contract", description: "Standard Service/Project Contract Agreement" },
 ];
 
 export default function DocumentsPage() {

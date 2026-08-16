@@ -1,8 +1,8 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { useRouter } from "next/navigation";
-import { Plus, Users, Mail, Phone, Building, Trash2, Edit, X, ChevronDown } from "lucide-react";
+import { Plus, Users, Mail, Phone, Building, Trash2, Edit, Contact, Upload, FileSpreadsheet } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
@@ -40,12 +40,14 @@ interface Project {
 
 export default function StakeholdersPage() {
   const router = useRouter();
+  const fileInputRef = useRef<HTMLInputElement>(null);
   const [stakeholders, setStakeholders] = useState<Stakeholder[]>([]);
   const [projects, setProjects] = useState<Project[]>([]);
   const [selectedProject, setSelectedProject] = useState<string>("");
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [editingStakeholder, setEditingStakeholder] = useState<Stakeholder | null>(null);
   const [loading, setLoading] = useState(true);
+  const [importing, setImporting] = useState(false);
 
   const [formData, setFormData] = useState({
     name: "",
@@ -93,7 +95,10 @@ export default function StakeholdersPage() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!selectedProject) return;
+    if (!selectedProject) {
+      alert("Stakeholders must belong to a project. Please select a project first.");
+      return;
+    }
 
     try {
       const url = editingStakeholder
@@ -115,6 +120,67 @@ export default function StakeholdersPage() {
       }
     } catch (error) {
       console.error("Failed to save stakeholder:", error);
+    }
+  };
+
+  // Native Device Contacts API Integration
+  const handleSyncPhonebook = async () => {
+    if (!selectedProject) {
+      alert("Please select a project first to sync contacts into.");
+      return;
+    }
+
+    if ("contacts" in navigator && "select" in (navigator as any).contacts) {
+      try {
+        const props = ["name", "email", "tel"];
+        const selectedContacts = await (navigator as any).contacts.select(props, { multiple: true });
+
+        if (selectedContacts && selectedContacts.length > 0) {
+          setImporting(true);
+          const formatted = selectedContacts.map((c: any) => ({
+            name: c.name?.[0] || "Unnamed Contact",
+            email: c.email?.[0] || "",
+            phone: c.tel?.[0] || "",
+            role: "stakeholder",
+          }));
+
+          await fetch("/api/contacts/sync", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ projectId: selectedProject, contacts: formatted }),
+          });
+
+          fetchStakeholders(selectedProject);
+        }
+      } catch (err) {
+        console.error("Contact Picker cancelled or failed:", err);
+      } finally {
+        setImporting(false);
+      }
+    } else {
+      // Fallback: click file input for vCard / VCF import
+      fileInputRef.current?.click();
+    }
+  };
+
+  const handleVCardUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file || !selectedProject) return;
+
+    setImporting(true);
+    try {
+      const text = await file.text();
+      await fetch("/api/contacts/sync", {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ projectId: selectedProject, vcard: text }),
+      });
+      fetchStakeholders(selectedProject);
+    } catch (err) {
+      console.error("Failed to import vCard:", err);
+    } finally {
+      setImporting(false);
+      if (e.target) e.target.value = "";
     }
   };
 
@@ -185,13 +251,23 @@ export default function StakeholdersPage() {
 
   return (
     <div className="container mx-auto py-8 px-4">
+      <input
+        type="file"
+        ref={fileInputRef}
+        onChange={handleVCardUpload}
+        accept=".vcf,.vcard"
+        className="hidden"
+      />
+
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-8">
         <div>
           <h1 className="text-3xl font-bold">Stakeholders</h1>
-          <p className="text-gray-600 mt-1">Manage project stakeholders and contacts</p>
+          <p className="text-gray-600 mt-1">
+            Every stakeholder belongs to a project. Sync contacts from your phonebook or vCard.
+          </p>
         </div>
 
-        <div className="flex items-center gap-4">
+        <div className="flex flex-wrap items-center gap-3">
           <Select value={selectedProject} onValueChange={setSelectedProject}>
             <SelectTrigger className="w-[200px]">
               <SelectValue placeholder="Select project" />
@@ -204,6 +280,11 @@ export default function StakeholdersPage() {
               ))}
             </SelectContent>
           </Select>
+
+          <Button variant="outline" onClick={handleSyncPhonebook} disabled={importing}>
+            <Contact className="w-4 h-4 mr-2" />
+            {importing ? "Syncing..." : "Sync Phonebook"}
+          </Button>
 
           <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
             <DialogTrigger asChild>
@@ -219,6 +300,21 @@ export default function StakeholdersPage() {
                 </DialogTitle>
               </DialogHeader>
               <form onSubmit={handleSubmit} className="space-y-4">
+                <div>
+                  <label className="text-sm font-medium">Assigned Project *</label>
+                  <Select value={selectedProject} onValueChange={setSelectedProject}>
+                    <SelectTrigger>
+                      <SelectValue placeholder="Select project" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {projects.map((project) => (
+                        <SelectItem key={project.id} value={project.id}>
+                          {project.name}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
                 <div>
                   <label className="text-sm font-medium">Name *</label>
                   <Input
@@ -255,7 +351,7 @@ export default function StakeholdersPage() {
                   />
                 </div>
                 <div>
-                  <label className="text-sm font-medium">Role *</label>
+                  <label className="text-sm font-medium">Role / Relationship *</label>
                   <Select
                     value={formData.role}
                     onValueChange={(value) => setFormData({ ...formData, role: value })}
@@ -299,12 +395,20 @@ export default function StakeholdersPage() {
         <Card>
           <CardContent className="py-12 text-center">
             <Users className="w-12 h-12 mx-auto text-gray-400 mb-4" />
-            <h3 className="text-lg font-medium text-gray-900 mb-2">No stakeholders yet</h3>
-            <p className="text-gray-500 mb-4">Add stakeholders to track contacts for this project</p>
-            <Button onClick={() => setIsDialogOpen(true)}>
-              <Plus className="w-4 h-4 mr-2" />
-              Add First Stakeholder
-            </Button>
+            <h3 className="text-lg font-medium text-gray-900 mb-2">No stakeholders in this project</h3>
+            <p className="text-gray-500 mb-4">
+              Add stakeholders or sync contacts from your phonebook to assign responsibilities.
+            </p>
+            <div className="flex justify-center gap-3">
+              <Button onClick={() => setIsDialogOpen(true)}>
+                <Plus className="w-4 h-4 mr-2" />
+                Add First Stakeholder
+              </Button>
+              <Button variant="outline" onClick={handleSyncPhonebook}>
+                <Contact className="w-4 h-4 mr-2" />
+                Sync Phonebook
+              </Button>
+            </div>
           </CardContent>
         </Card>
       ) : (

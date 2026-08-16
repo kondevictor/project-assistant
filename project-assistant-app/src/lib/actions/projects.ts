@@ -18,12 +18,24 @@ export async function createProject(formData: FormData) {
   const { userId } = await auth();
   if (!userId) throw new Error("Unauthorized");
 
+  const stakeholdersJson = formData.get("stakeholders");
+  let stakeholders: Array<{ name: string; email?: string; phone?: string; company?: string; role: string }> = [];
+  
+  if (stakeholdersJson) {
+    try {
+      stakeholders = JSON.parse(stakeholdersJson as string);
+    } catch {
+      stakeholders = [];
+    }
+  }
+
   const validated = createProjectSchema.parse({
     name: formData.get("name"),
     description: formData.get("description"),
     stage: formData.get("stage") || "INCEPTION",
     startDate: formData.get("startDate"),
     targetDate: formData.get("targetDate"),
+    stakeholders,
   });
 
   const project = await prisma.project.create({
@@ -34,6 +46,15 @@ export async function createProject(formData: FormData) {
       startDate: parseDate(validated.startDate),
       targetDate: parseDate(validated.targetDate),
       ownerId: userId,
+      stakeholders: validated.stakeholders.length > 0 ? {
+        create: validated.stakeholders.map((s) => ({
+          name: s.name,
+          email: s.email || null,
+          phone: s.phone || null,
+          company: s.company || null,
+          role: s.role,
+        })),
+      } : undefined,
     },
   });
 

@@ -16,6 +16,7 @@ import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { TaskRow } from "@/components/task/task-row";
 import { StageMenu } from "@/components/project/stage-menu";
+import { NewTaskSheet } from "@/components/task/new-task-sheet";
 
 interface Project {
   id: string;
@@ -348,34 +349,43 @@ export default function ProjectDetailPage() {
                 <CardTitle>Phases</CardTitle>
               </div>
             </CardHeader>
-            <CardContent>
-              {project.phases?.length === 0 ? (
-                <p className="text-gray-500">No phases yet</p>
-              ) : (
-                <div className="space-y-4">
-                  {project.phases?.map((phase) => (
-                    <div key={phase.id} className="border rounded-lg p-4">
-                      <div className="flex items-center gap-2 mb-2">
-                        <h3 className="font-medium">{phase.name}</h3>
-                        {phase.isMilestone && (
-                          <Badge variant="outline">Milestone</Badge>
-                        )}
-                        {phase.completedAt && (
-                          <Badge className="bg-green-100 text-green-800">Completed</Badge>
-                        )}
-                      </div>
-                      {phase.tasks.length > 0 && (
-                        <div className="space-y-2 mt-3">
-                          {phase.tasks.map((task: any) => (
-                            <TaskRow key={task.id} task={task} />
-                          ))}
+<CardContent>
+                {project.phases?.length === 0 ? (
+                  <p className="text-gray-500">No phases yet</p>
+                ) : (
+                  <div className="space-y-4">
+                    {project.phases?.map((phase) => (
+                      <div key={phase.id} className="border rounded-lg p-4">
+                        <div className="flex items-center gap-2 mb-2">
+                          <h3 className="font-medium">{phase.name}</h3>
+                          {phase.isMilestone && (
+                            <Badge variant="outline">Milestone</Badge>
+                          )}
+                          {phase.completedAt && (
+                            <Badge className="bg-green-100 text-green-800">Completed</Badge>
+                          )}
                         </div>
-                      )}
-                    </div>
-                  ))}
-                </div>
-              )}
-            </CardContent>
+                        <div className="flex flex-col gap-2">
+                          {phase.tasks.length > 0 && (
+                            <div className="space-y-2 mt-3">
+                              {phase.tasks.map((task: any) => (
+                                <TaskRow key={task.id} task={task} />
+                              ))}
+                            </div>
+                          )}
+                          <NewTaskSheet
+                            projectId={project.id}
+                            phases={project.phases?.map(p => ({ id: p.id, name: p.name })) || []}
+                            defaultPhaseId={phase.id}
+                            triggerLabel="Add Task"
+                            stakeholders={project.stakeholders?.map((s: any) => ({ id: s.id, name: s.name })) || []}
+                          />
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </CardContent>
           </Card>
 
           {/* Unphased Tasks */}
@@ -384,15 +394,17 @@ export default function ProjectDetailPage() {
               <CardTitle>Tasks</CardTitle>
             </CardHeader>
             <CardContent>
-              {project.tasks?.length === 0 ? (
-                <p className="text-gray-500">No tasks yet</p>
-              ) : (
-                <div className="space-y-2">
-                  {project.tasks?.map((task: any) => (
-                    <TaskRow key={task.id} task={task} />
-                  ))}
-                </div>
-              )}
+              <div className="space-y-2">
+                {project.tasks?.map((task: any) => (
+                  <TaskRow key={task.id} task={task} />
+                ))}
+              </div>
+              <NewTaskSheet
+                projectId={project.id}
+                phases={project.phases?.map(p => ({ id: p.id, name: p.name })) || []}
+                triggerLabel="Add Task"
+                stakeholders={project.stakeholders?.map((s: any) => ({ id: s.id, name: s.name })) || []}
+              />
             </CardContent>
           </Card>
         </div>

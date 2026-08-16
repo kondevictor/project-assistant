@@ -14,21 +14,25 @@ import {
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Textarea } from "@/components/ui/textarea";
 import { createTask } from "@/lib/actions/tasks";
 import { PRIORITIES, PRIORITY_LABELS } from "@/lib/constants";
 
 type Phase = { id: string; name: string };
+type Stakeholder = { id: string; name: string };
 
 export function NewTaskSheet({
   projectId,
   phases,
   defaultPhaseId,
   triggerLabel = "Add Task",
+  stakeholders = [],
 }: {
   projectId: string;
   phases?: Phase[];
   defaultPhaseId?: string;
   triggerLabel?: string;
+  stakeholders?: Stakeholder[];
 }) {
   const [open, setOpen] = useState(false);
 
@@ -94,9 +98,44 @@ export function NewTaskSheet({
               </Select>
             </div>
           )}
+          {stakeholders.length > 0 && (
+            <div className="flex flex-col gap-1.5">
+              <Label htmlFor="assigneeId">Assignee (Stakeholder)</Label>
+              <Select name="assigneeId" defaultValue="none">
+                <SelectTrigger id="assigneeId" className="w-full">
+                  <SelectValue placeholder="Select stakeholder" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="none">No assignee</SelectItem>
+                  {stakeholders.map((stakeholder) => (
+                    <SelectItem key={stakeholder.id} value={stakeholder.id}>
+                      {stakeholder.name}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+          )}
           <div className="flex flex-col gap-1.5">
-            <Label htmlFor="owner">Owner</Label>
-            <Input id="owner" name="owner" placeholder="Optional" />
+            <Label htmlFor="status">Status</Label>
+            <Select name="status" defaultValue="NOT_STARTED">
+              <SelectTrigger id="status" className="w-full">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="NOT_STARTED">Not Started</SelectItem>
+                <SelectItem value="PENDING">Pending</SelectItem>
+                <SelectItem value="IN_PROGRESS">In Progress</SelectItem>
+                <SelectItem value="DONE">Done</SelectItem>
+                <SelectItem value="FAILED">Failed</SelectItem>
+                <SelectItem value="BLOCKED">Blocked</SelectItem>
+                <SelectItem value="CANCELLED">Cancelled</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+          <div className="flex flex-col gap-1.5">
+            <Label htmlFor="comments">Comments</Label>
+            <Textarea id="comments" name="comments" placeholder="Add any comments..." rows={3} />
           </div>
           <Button type="submit" className="mt-2">
             Add task

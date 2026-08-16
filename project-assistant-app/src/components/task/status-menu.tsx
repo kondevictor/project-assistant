@@ -15,9 +15,11 @@ import { STATUS_LABELS, TASK_STATUSES, type TaskStatus } from "@/lib/constants";
 
 const STATUS_VARIANT: Record<TaskStatus, "default" | "secondary" | "warn" | "success" | "destructive"> = {
   NOT_STARTED: "secondary",
+  PENDING: "warn",
   IN_PROGRESS: "default",
   BLOCKED: "destructive",
   DONE: "success",
+  FAILED: "destructive",
   CANCELLED: "secondary",
 };
 

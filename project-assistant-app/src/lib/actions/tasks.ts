@@ -30,10 +30,12 @@ export async function createTask(formData: FormData) {
     projectId: formData.get("projectId"),
     title: formData.get("title"),
     description: formData.get("description"),
-    owner: formData.get("owner"),
+    assigneeId: formData.get("assigneeId"),
     priority: formData.get("priority") || "MEDIUM",
     dueDate: formData.get("dueDate"),
     phaseId,
+    status: formData.get("status") || "NOT_STARTED",
+    comments: formData.get("comments"),
   });
 
   await prisma.task.create({
@@ -43,9 +45,10 @@ export async function createTask(formData: FormData) {
       title: validated.title,
       description: validated.description || null,
       ownerId: userId,
-      assigneeId: validated.owner || null,
+      assigneeId: validated.assigneeId || null,
       priority: validated.priority,
       dueDate: parseDate(validated.dueDate),
+      status: validated.status,
     },
   });
 
@@ -78,6 +81,34 @@ export async function setTaskBlockedReason(taskId: string, projectId: string, re
   await prisma.task.update({
     where: { id: taskId },
     data: { blockedReason: reason.trim() || null },
+  });
+
+  revalidateTaskViews(projectId);
+}
+
+export async function updateTask(taskId: string, projectId: string, data: {
+  title?: string;
+  description?: string;
+  assigneeId?: string | null;
+  priority?: string;
+  dueDate?: string | null;
+  status?: string;
+  comments?: string | null;
+}) {
+  const { userId } = await auth();
+  if (!userId) throw new Error("Unauthorized");
+
+  await prisma.task.update({
+    where: { id: taskId },
+    data: {
+      title: data.title,
+      description: data.description,
+      assigneeId: data.assigneeId,
+      priority: data.priority,
+      dueDate: parseDate(data.dueDate),
+      status: data.status as TaskStatus,
+      // comments would need a separate field or notes table
+    },
   });
 
   revalidateTaskViews(projectId);
