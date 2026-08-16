@@ -14,7 +14,7 @@ export default async function TasksPage({
   const { status: filterStatus } = await searchParams;
 
   const tasks = await prisma.task.findMany({
-    include: { project: true },
+    include: { project: true, stakeholder: true, assignee: true },
     orderBy: [
       { dueDate: "asc" },
       { createdAt: "desc" },

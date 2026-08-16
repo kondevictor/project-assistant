@@ -26,11 +26,15 @@ export async function createTask(formData: FormData) {
   const phaseIdRaw = String(formData.get("phaseId") ?? "");
   const phaseId = phaseIdRaw && phaseIdRaw !== "none" ? phaseIdRaw : null;
 
+  const stakeholderIdRaw = String(formData.get("stakeholderId") ?? "");
+  const stakeholderId = stakeholderIdRaw && stakeholderIdRaw !== "none" ? stakeholderIdRaw : null;
+
   const validated = createTaskSchema.parse({
     projectId: formData.get("projectId"),
     title: formData.get("title"),
     description: formData.get("description"),
     assigneeId: formData.get("assigneeId"),
+    stakeholderId: formData.get("stakeholderId"),
     priority: formData.get("priority") || "MEDIUM",
     dueDate: formData.get("dueDate"),
     phaseId,
@@ -46,6 +50,7 @@ export async function createTask(formData: FormData) {
       description: validated.description || null,
       ownerId: userId,
       assigneeId: validated.assigneeId || null,
+      stakeholderId: stakeholderId,
       priority: validated.priority,
       dueDate: parseDate(validated.dueDate),
       status: validated.status,
@@ -90,6 +95,7 @@ export async function updateTask(taskId: string, projectId: string, data: {
   title?: string;
   description?: string;
   assigneeId?: string | null;
+  stakeholderId?: string | null;
   priority?: string;
   dueDate?: string | null;
   status?: string;
@@ -104,6 +110,7 @@ export async function updateTask(taskId: string, projectId: string, data: {
       title: data.title,
       description: data.description,
       assigneeId: data.assigneeId,
+      stakeholderId: data.stakeholderId,
       priority: data.priority,
       dueDate: parseDate(data.dueDate),
       status: data.status as TaskStatus,

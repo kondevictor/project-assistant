@@ -112,6 +112,9 @@ model Task {
 
   notes Note[]
 
+  stakeholderId String?
+  stakeholder   Stakeholder? @relation("TaskStakeholder", fields: [stakeholderId], references: [id])
+
   dependsOn TaskDependency[] @relation("DependentTask")
   blocks    TaskDependency[] @relation("BlockingTask")
 
@@ -200,6 +203,7 @@ model Stakeholder {
 
   meetingAttendees MeetingAttendee[]
   stakeholderTasks StakeholderTask[]
+  assignedTasks    Task[]            @relation("TaskStakeholder")
 
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt

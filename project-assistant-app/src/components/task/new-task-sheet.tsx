@@ -100,13 +100,13 @@ export function NewTaskSheet({
           )}
           {stakeholders.length > 0 && (
             <div className="flex flex-col gap-1.5">
-              <Label htmlFor="assigneeId">Assignee (Stakeholder)</Label>
-              <Select name="assigneeId" defaultValue="none">
-                <SelectTrigger id="assigneeId" className="w-full">
-                  <SelectValue placeholder="Select stakeholder" />
+              <Label htmlFor="stakeholderId">Assigned To (Person)</Label>
+              <Select name="stakeholderId" defaultValue="none">
+                <SelectTrigger id="stakeholderId" className="w-full">
+                  <SelectValue placeholder="Select a person" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="none">No assignee</SelectItem>
+                  <SelectItem value="none">Unassigned</SelectItem>
                   {stakeholders.map((stakeholder) => (
                     <SelectItem key={stakeholder.id} value={stakeholder.id}>
                       {stakeholder.name}

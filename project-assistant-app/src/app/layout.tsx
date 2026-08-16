@@ -3,6 +3,9 @@ import { Geist, Geist_Mono } from "next/font/google";
 import { ClerkProvider } from "@clerk/nextjs";
 import "./globals.css";
 import { NavShell } from "@/components/nav/nav-shell";
+import { TutorialProvider } from "@/components/tutorial/tutorial-provider";
+import { TutorialOverlay } from "@/components/tutorial/tutorial-overlay";
+import { TutorialLauncher } from "@/components/tutorial/tutorial-launcher";
 
 const clerkPubKey = process.env.NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY;
 
@@ -38,7 +41,11 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
       className={`${geistSans.variable} ${geistMono.variable} h-full antialiased`}
     >
       <body className="min-h-full flex flex-col">
-        <NavShell>{children}</NavShell>
+        <TutorialProvider>
+          <NavShell>{children}</NavShell>
+          <TutorialOverlay />
+          <TutorialLauncher />
+        </TutorialProvider>
       </body>
     </html>
   );

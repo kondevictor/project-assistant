@@ -75,44 +75,69 @@ export default function TranscriptionsPage() {
 
   const startRecording = async () => {
     try {
-      const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
-      const mediaRecorder = new MediaRecorder(stream);
+      if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
+        alert("Microphone recording is not supported in this browser. Please try Chrome, Firefox, or Safari.");
+        return;
+      }
+
+      const stream = await navigator.mediaDevices.getUserMedia({ audio: true, video: false });
+      
+      // Determine supported mimeType
+      let options: MediaRecorderOptions = {};
+      if (MediaRecorder.isTypeSupported("audio/webm;codecs=opus")) {
+        options = { mimeType: "audio/webm;codecs=opus" };
+      } else if (MediaRecorder.isTypeSupported("audio/mp4")) {
+        options = { mimeType: "audio/mp4" };
+      } else if (MediaRecorder.isTypeSupported("audio/ogg")) {
+        options = { mimeType: "audio/ogg" };
+      }
+
+      const mediaRecorder = new MediaRecorder(stream, options);
       mediaRecorderRef.current = mediaRecorder;
       audioChunksRef.current = [];
 
       mediaRecorder.ondataavailable = (event) => {
-        if (event.data.size > 0) {
+        if (event.data && event.data.size > 0) {
           audioChunksRef.current.push(event.data);
         }
       };
 
       mediaRecorder.onstop = () => {
-        const blob = new Blob(audioChunksRef.current, { type: "audio/webm" });
+        const mimeType = mediaRecorder.mimeType || "audio/webm";
+        const blob = new Blob(audioChunksRef.current, { type: mimeType });
         setAudioBlob(blob);
         stream.getTracks().forEach((track) => track.stop());
       };
 
-      // Set up Web Speech API for Live Transcription if supported
+      // Web Speech API for Live Text Streaming
       const SpeechRecognition = (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition;
       if (SpeechRecognition) {
-        const recognition = new SpeechRecognition();
-        recognition.continuous = true;
-        recognition.interimResults = true;
-        recognition.lang = "en-US";
+        try {
+          const recognition = new SpeechRecognition();
+          recognition.continuous = true;
+          recognition.interimResults = true;
+          recognition.lang = "en-US";
 
-        recognition.onresult = (event: any) => {
-          let currentText = "";
-          for (let i = 0; i < event.results.length; i++) {
-            currentText += event.results[i][0].transcript + " ";
-          }
-          setLiveTranscriptText(currentText);
-        };
+          recognition.onresult = (event: any) => {
+            let currentText = "";
+            for (let i = 0; i < event.results.length; i++) {
+              currentText += event.results[i][0].transcript + " ";
+            }
+            setLiveTranscriptText(currentText);
+          };
 
-        recognition.start();
-        speechRecognitionRef.current = recognition;
+          recognition.onerror = (err: any) => {
+            console.warn("Speech recognition error:", err);
+          };
+
+          recognition.start();
+          speechRecognitionRef.current = recognition;
+        } catch (e) {
+          console.warn("SpeechRecognition init failed:", e);
+        }
       }
 
-      mediaRecorder.start();
+      mediaRecorder.start(1000); // collect 1000ms chunks
       setIsRecording(true);
       setIsPaused(false);
       setRecordingTime(0);
@@ -120,9 +145,9 @@ export default function TranscriptionsPage() {
       timerRef.current = setInterval(() => {
         setRecordingTime((prev) => prev + 1);
       }, 1000);
-    } catch (error) {
+    } catch (error: any) {
       console.error("Failed to start recording:", error);
-      alert("Could not access microphone. Please allow microphone access.");
+      alert(`Microphone Access Error: ${error.message || "Please allow microphone permissions in your browser settings."}`);
     }
   };
 
@@ -196,7 +221,18 @@ export default function TranscriptionsPage() {
   };
 
   const processTranscription = async () => {
-    if (!audioBlob || !selectedMeeting) return;
+    if (!audioBlob) return;
+    
+    let meetingIdToUse = selectedMeeting;
+    if (!meetingIdToUse && meetings.length > 0) {
+      meetingIdToUse = meetings[0].id;
+      setSelectedMeeting(meetingIdToUse);
+    }
+
+    if (!meetingIdToUse) {
+      alert("Please select or schedule a meeting first to attach this transcription.");
+      return;
+    }
 
     setIsProcessing(true);
     try {
@@ -220,7 +256,7 @@ export default function TranscriptionsPage() {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          meetingId: selectedMeeting,
+          meetingId: meetingIdToUse,
           transcript: mockResult.transcript,
           summary: mockResult.summary,
           actionItems: JSON.stringify(mockResult.actionItems),
@@ -304,8 +340,7 @@ export default function TranscriptionsPage() {
                     <Button
                       size="lg"
                       onClick={startRecording}
-                      disabled={!selectedMeeting}
-                      className="bg-red-600 hover:bg-red-700 text-white"
+                      className="bg-red-600 hover:bg-red-700 text-white font-semibold shadow-md"
                     >
                       <Mic className="w-5 h-5 mr-2" />
                       Record Meeting
@@ -314,7 +349,7 @@ export default function TranscriptionsPage() {
                       size="lg"
                       variant="outline"
                       onClick={() => fileInputRef.current?.click()}
-                      disabled={!selectedMeeting}
+                      className="font-semibold shadow-sm"
                     >
                       <Upload className="w-5 h-5 mr-2" />
                       Upload Audio

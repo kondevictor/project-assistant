@@ -13,11 +13,12 @@ export async function GET(
       owner: true,
       phases: {
         orderBy: { order: "asc" },
-        include: { tasks: true },
+        include: { tasks: { include: { stakeholder: true } } },
       },
       tasks: {
         where: { phaseId: null },
         orderBy: { createdAt: "desc" },
+        include: { stakeholder: true },
       },
       stakeholders: true,
       meetings: {

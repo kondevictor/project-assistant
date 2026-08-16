@@ -19,6 +19,10 @@ export type TaskRowData = {
   projectId: string;
   title: string;
   ownerId: string | null;
+  assigneeId?: string | null;
+  assigneeName?: string | null;
+  stakeholder?: { name: string } | null;
+  assignee?: { name: string | null; email?: string } | null;
   status: string;
   priority: string;
   dueDate: Date | string | null;
@@ -32,6 +36,13 @@ export function TaskRow({ task, showProjectLink }: { task: TaskRowData; showProj
   const overdue = isOverdue(task);
   const stalled = isStalled(task);
   const dueDate = toDate(task.dueDate);
+
+  const personName =
+    task.stakeholder?.name ||
+    task.assigneeName ||
+    task.assignee?.name ||
+    task.assignee?.email ||
+    task.ownerId;
 
   return (
     <div className="flex flex-col gap-2 rounded-lg border p-3 sm:flex-row sm:items-center sm:justify-between">
@@ -56,7 +67,11 @@ export function TaskRow({ task, showProjectLink }: { task: TaskRowData; showProj
               Due {dueDate.toLocaleDateString()}
             </span>
           )}
-          {task.ownerId && <span>{task.ownerId}</span>}
+          {personName && (
+            <span className="font-medium text-foreground">
+              Assigned: {personName}
+            </span>
+          )}
           {task.status === "BLOCKED" && task.blockedReason && <span>Blocked: {task.blockedReason}</span>}
           {showProjectLink && (
             <Link href={`/projects/${task.projectId}`} className="underline underline-offset-2">
